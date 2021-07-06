@@ -1,0 +1,17 @@
+-h, --help                  :   Help
+-u, --username              :   EazyML username
+-p, --api_key               :   EazyML api_key. user can download from UI (MyAccount->API)
+-g, --config_file           :   Configurations file to override the default EazyML configurations.
+-f, --train_file            :   Train filename with absolute path.
+-o, --outcome               :   Outcome column name. It must be provided if train filename is provided.
+-i, --id_col                :   Id col in train data.
+-c, --discard_col_list      :   Comma separated list of columns which user wants to discard in train data.
+-u, --impute                :   Pass --impute is want to impute, default is "no".
+-d, --dataset_id            :   If user has dataset_id and he want to perform model_building on dataset,
+                                then directly pass dataset_id.
+-v, --predictive            :   Build predictive model.
+-a, --augi                  :   Build Augmented Intelligence.
+-m, --model_id              :   Pass model_id to perform prediction directly.
+-r, --predict_file          :   Prediction filename with absolute path.
+-t, --prediction_dataset_id :   Test dataset id to understand the predictions.
+-e, --explain_rec_nums      :   Comma separated list of record number user want to understand.
