@@ -2,7 +2,7 @@ import json
 import getopt
 import sys
 import os
-import datetime
+from datetime import datetime
 import eazyml as ez
 
 
@@ -46,7 +46,7 @@ def eazyml_upload(token, train_dataset_name, outcome, id_col="null",
         print("Training data file doesn't exist - %s" % train_dataset_name)
         return None
 
-    time_start  = datetime.datetime.now()
+    time_start = datetime.now()
     print("Uploading the training data file ...")
     resp = ez.ez_load(token, train_dataset_name, options)
     if resp["success"] is True:
@@ -62,12 +62,15 @@ def eazyml_upload(token, train_dataset_name, outcome, id_col="null",
         print("Upload error: %s" % (resp["message"]))
         dataset_id = None
 
-    print("Upload time: " + \
-          "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
-    print("The reference identifier for the dataset (dataset_id) is: %s" % (dataset_id))
+    print("Upload time: " +
+          "%.2f secs" % (datetime.now() - time_start).total_seconds())
+    print("The reference identifier for the dataset " +
+          "(dataset_id) is: %s" % (dataset_id))
     print("Likely next steps:")
-    print("    python eazyml_upload_build_predict.py --dataset_id %s --augi" % (dataset_id))
-    print("    python eazyml_upload_build_predict.py --dataset_id %s --predictive" % (dataset_id))
+    print("    python eazyml_upload_build_predict.py " +
+          "--dataset_id %s --augi" % (dataset_id))
+    print("    python eazyml_upload_build_predict.py " +
+          "--dataset_id %s --predictive" % (dataset_id))
     return dataset_id
 
 
@@ -91,19 +94,19 @@ def eazyml_build_model(token, dataset_id, model_type, prefix_name):
     print("Building " + model_type + " models ...")
 
     # Model initialization
-    time_start  = datetime.datetime.now()
+    time_start = datetime.now()
     resp = ez.ez_init_model(token, dataset_id, options)
     if resp["success"] is True:
         print(model_type.title() + " models: initialized successfully")
     else:
         print("Model initialization error: %s" % (resp["message"]))
         return None
-    print("Model initialization time: " + \
-          "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
+    print("Model initialization time: " +
+          "%.2f secs" % (datetime.now() - time_start).total_seconds())
     model_id = resp["model_id"]
 
     # Feature selection
-    time_start  = datetime.datetime.now()
+    time_start = datetime.now()
     resp = ez.ez_select_features(token, model_id)
     if resp["success"] is True:
         print(model_type.title() + " models: features selected successfully")
@@ -116,21 +119,21 @@ def eazyml_build_model(token, dataset_id, model_type, prefix_name):
         dump_file = prefix_name + "_" + PREDICTIVE_MODEL_FEATURES_FILE
         with open(dump_file, "w") as fw:
             fw.write(json_obj)
-        print("Selected features are stored " + \
+        print("Selected features are stored " +
               "in %s" % (dump_file))
     else:
         json_obj = json.dumps(resp, indent=4)
         dump_file = prefix_name + "_" + AUGI_MODEL_FEATURES_FILE
         with open(dump_file, "w") as fw:
             fw.write(json_obj)
-        print("Selected features are stored " + \
+        print("Selected features are stored " +
               "in %s" % (dump_file))
 
-    print("Feature selection time: " + \
-          "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
+    print("Feature selection time: " +
+          "%.2f secs" % (datetime.now() - time_start).total_seconds())
 
     # Build model
-    time_start  = datetime.datetime.now()
+    time_start = datetime.now()
     resp = ez.ez_build_models(token, model_id)
     if resp["success"] is True:
         print(model_type.title() + " models built successfully")
@@ -143,21 +146,23 @@ def eazyml_build_model(token, dataset_id, model_type, prefix_name):
         with open(dump_file, "w") as fw:
             fw.write(json_obj)
         print("Performance metrics are stored in %s" % (dump_file))
-        print("Model building time: " + \
-              "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
+        print("Model building time: " +
+              "%.2f secs" % (datetime.now() - time_start).total_seconds())
     else:
         json_obj = json.dumps(resp["insights"], indent=4)
         dump_file = prefix_name + "_" + AUGI_MODEL_FILE
         with open(dump_file, "w") as fw:
             fw.write(json_obj)
         print("Augmented-Intelligence insights are stored %s" % (dump_file))
-        print("Model building time: " + \
-              "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
+        print("Model building time: " +
+              "%.2f secs" % (datetime.now() - time_start).total_seconds())
         return None
-    print("The reference identifier for the model (model_id) is: %s" % (resp["model_id"]))
+    print("The reference identifier for the model " +
+          "(model_id) is: %s" % (resp["model_id"]))
     if model_type == "predictive":
         print("Likely next steps:")
-        print("    python eazyml_upload_build_predict.py --model_id %s --predict_file <test_data_file>" % (model_id))
+        print("    python eazyml_upload_build_predict.py " +
+              "--model_id %s --predict_file <test_data_file>" % (model_id))
     return model_id
 
 
@@ -178,7 +183,7 @@ def eazyml_predict_dataset(token, model_id, predict_filename, prefix_name):
         return None
 
     print("Uploading the prediction data file and making predictions ...")
-    time_start  = datetime.datetime.now()
+    time_start = datetime.now()
     resp = ez.ez_predict(token, model_id, predict_filename)
     if resp["success"] is True:
         print("Predictions are ready")
@@ -191,12 +196,15 @@ def eazyml_predict_dataset(token, model_id, predict_filename, prefix_name):
     with open(dump_file, "w") as fw:
         fw.write(json_obj)
     print("Predictions are stored in %s" % (dump_file))
-    print("Prediction time: " + \
-          "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
-    print("The reference identifier for predictions " + \
+    print("Prediction time: " +
+          "%.2f secs" % (datetime.now() - time_start).total_seconds())
+    print("The reference identifier for predictions " +
           "(prediction_dataset_id) is: %s" % (resp["prediction_dataset_id"]))
     print("Likely next steps:")
-    print("    python eazyml_upload_build_predict.py --model_id %s --prediction_dataset_id %s --explain_rec_nums <comma separated numbers>" % (model_id, resp["prediction_dataset_id"]))
+    print(("    python eazyml_upload_build_predict.py " +
+           "--model_id %s --prediction_dataset_id %s " +
+           "--explain_rec_nums <comma separated numbers>")
+          % (model_id, resp["prediction_dataset_id"]))
     return resp["prediction_dataset_id"]
 
 
@@ -210,11 +218,11 @@ def eazyml_explain_points(token, model_id, prediction_dataset_id,
         model_id: model_id returned by predictive model
         prediction_dataset_id: Prediction id returned by predict function
         record_numbers: List of record numbers in prediction file
-        
+
     """
     options = {"record_number": record_numbers}
     print("Executing Explainable-AI ...")
-    time_start  = datetime.datetime.now()
+    time_start = datetime.now()
     resp = ez.ez_explain(token, model_id, prediction_dataset_id, options)
     if resp["success"] is True:
         print("Explanation/s is/are ready")
@@ -223,12 +231,12 @@ def eazyml_explain_points(token, model_id, prediction_dataset_id,
         return
 
     json_obj = json.dumps(resp, indent=4)
-    dump_file  = prefix_name + "_" + EXPLANATIONS_FILE
+    dump_file = prefix_name + "_" + EXPLANATIONS_FILE
     with open(dump_file, "w") as fw:
         fw.write(json_obj)
     print("Explanations are stored in %s" % (dump_file))
-    print("Explanations time: " + \
-          "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
+    print("Explanations time: " +
+          "%.2f secs" % (datetime.now() - time_start).total_seconds())
 
 
 def eazyml_auth(username, api_key, store_info=False):
@@ -282,7 +290,7 @@ def flow(username, api_key, config_file=None, prefix_name="",
             print("Please authenticate to proceed")
             return
 
-    #Set config file
+    # Set config file
     if config_file:
         print("Uploading the configuration file ...")
         resp = ez.ez_config(token, config_file)
@@ -291,7 +299,7 @@ def flow(username, api_key, config_file=None, prefix_name="",
         else:
             print("Configuration file upload error: %s" % (resp["message"]))
             return
-        
+
     # upload data and get dataset_id
     if train_dataset_name:
         if not outcome:
@@ -313,7 +321,8 @@ def flow(username, api_key, config_file=None, prefix_name="",
     # Predict
     if predict_filename and model_id:
         prediction_dataset_id = eazyml_predict_dataset(token, model_id,
-                                                       predict_filename, prefix_name)
+                                                       predict_filename,
+                                                       prefix_name)
         if not prediction_dataset_id:
             return
     # Explain points
@@ -329,8 +338,9 @@ if __name__ == "__main__":
               "f:o:i:c:u" + \
               "d:m:va" + \
               "r:t:e:"
-    long_options = ["help", "username=", "api_key=", "config_file=", "prefix_name=",
-                    "train_file=", "outcome=", "id_col=", "discard_col_list=", "impute",
+    long_options = ["help", "username=", "api_key=", "config_file=",
+                    "prefix_name=", "train_file=", "outcome=",
+                    "id_col=", "discard_col_list=", "impute",
                     "dataset_id=", "model_id=", "predictive", "augi",
                     "predict_file=", "prediction_dataset_id=",
                     "explain_rec_nums="]
@@ -381,7 +391,8 @@ if __name__ == "__main__":
             elif curr_arg in ("-t", "--prediction_dataset_id"):
                 prediction_dataset_id = curr_val
             elif curr_arg in ("-e", "--explain_rec_nums"):
-                explain_record_numbers = [x.strip() for x in curr_val.split(",")]
+                explain_record_numbers = [x.strip()
+                                          for x in curr_val.split(",")]
 
         flow(username, api_key, config_file, prefix_name,
              train_file, outcome, id_col,
