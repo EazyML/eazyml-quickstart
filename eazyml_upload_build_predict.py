@@ -155,6 +155,9 @@ def eazyml_build_model(token, dataset_id, model_type, prefix_name):
               "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
         return None
     print("The reference identifier for the model (model_id) is: %s" % (resp["model_id"]))
+    if model_type == "predictive":
+        print("Likely next steps:")
+        print("    python eazyml_upload_build_predict.py --model_id %s --predict_file <test_data_file>" % (model_id))
     return model_id
 
 
@@ -192,6 +195,8 @@ def eazyml_predict_dataset(token, model_id, predict_filename, prefix_name):
           "%.2f secs" % (datetime.datetime.now() - time_start).total_seconds())
     print("The reference identifier for predictions " + \
           "(prediction_dataset_id) is: %s" % (resp["prediction_dataset_id"]))
+    print("Likely next steps:")
+    print("    python eazyml_upload_build_predict.py --model_id %s --prediction_dataset_id %s --explain_rec_nums <comma separated numbers>" % (model_id, resp["prediction_dataset_id"]))
     return resp["prediction_dataset_id"]
 
 
