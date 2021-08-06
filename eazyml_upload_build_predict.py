@@ -105,6 +105,21 @@ def eazyml_build_model(token, dataset_id, model_type, prefix_name):
           "%.2f secs" % (datetime.now() - time_start).total_seconds())
     model_id = resp["model_id"]
 
+    # derive text features if any
+    time_start = datetime.now()
+    options = {
+               "text_types": {'*': ['sentiments', 'topic extraction']},
+               "return_dataset": "no"
+               }
+    resp = ez.ez_derive_text(token, model_id, options)
+    if resp["success"] is True:
+        print(model_type.title() + " models: text features " +
+              "(sentiments and topic extraction) derived successfully")
+        print("Text features derivation time: " +
+              "%.2f secs" % (datetime.now() - time_start).total_seconds())
+    elif "Text columns are not present" not in resp["message"]:
+        print("Text features derivation error: %s" % (resp["message"]))
+
     # Feature selection
     time_start = datetime.now()
     resp = ez.ez_select_features(token, model_id)
