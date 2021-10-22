@@ -88,7 +88,7 @@ def ez_auth(username, password=None, api_key=None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -154,7 +154,7 @@ def ez_load(auth_token, filename, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -203,7 +203,7 @@ def ez_types(auth_token, dataset_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -257,7 +257,7 @@ def ez_set_outcome(auth_token, dataset_id, outcome, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -306,7 +306,7 @@ def ez_outlier(auth_token, dataset_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -354,7 +354,7 @@ def ez_impute(auth_token, dataset_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -405,7 +405,7 @@ def ez_shuffle(auth_token, dataset_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -497,7 +497,7 @@ def ez_init_model(auth_token, dataset_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -544,7 +544,7 @@ def ez_remove_dependent(auth_token, model_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -612,7 +612,7 @@ def ez_derive_numeric(auth_token, model_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
         
 
@@ -694,7 +694,7 @@ def ez_derive_text(auth_token, model_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
         
 
@@ -741,7 +741,7 @@ def ez_select_features(auth_token, model_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
         
 
@@ -793,7 +793,7 @@ def ez_build_models(auth_token, model_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -929,7 +929,7 @@ def ez_predict(auth_token, model_id, filename, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
         
 
@@ -990,7 +990,7 @@ def ez_explain(auth_token, model_id, prediction_dataset_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 def ez_insert(auth_token, filename, dataset_id, options = None):
@@ -1049,7 +1049,7 @@ def ez_insert(auth_token, filename, dataset_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -1108,7 +1108,7 @@ def ez_fetch(auth_token, dataset_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -1166,7 +1166,7 @@ def ez_config(auth_token, filename, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -1223,7 +1223,7 @@ def ez_get_model_status(auth_token, model_id, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -1271,7 +1271,7 @@ def ez_get_datasets(auth_token, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -1319,7 +1319,7 @@ def ez_get_test_datasets(auth_token, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -1367,7 +1367,7 @@ def ez_get_models(auth_token, options = None):
         response_json["status_code"] = status_code
         return response_json
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
 
 
@@ -1425,5 +1425,5 @@ def ez_export_model(auth_token, model_id, model_name, options=None):
         except Exception as e:
             response.raise_for_status()
     except Exception as e:
-        print((traceback.print_exc()))
+        traceback.print_exc()
         return exception_return(e, status_code)
