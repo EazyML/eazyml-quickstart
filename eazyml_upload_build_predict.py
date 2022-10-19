@@ -9,6 +9,8 @@ import eazyml as ez
 AUTH_FILE = "authentication.json"
 UPLOAD_FILE = "upload_data.json"
 DT_TYPE_FILE = "data_type.json"
+IMPUTE_FILE = "imputed_data.json"
+OUTLIER_FILE = "outlier_data.json"
 PREDICTIVE_MODEL_FEATURES_FILE = "predictive_model_feature_selected.json"
 PREDICTIVE_MODEL_FILE = "predictive_model_performance_metrics.json"
 AUGI_MODEL_FEATURES_FILE = "augi_insights_feature_selected.json"
@@ -48,6 +50,11 @@ def eazyml_upload(token, train_dataset_name, outcome, id_col="null",
         print("Training data file doesn't exist - %s" % train_dataset_name)
         return None
     dump_file = prefix_name + "_" + UPLOAD_FILE
+    if os.path.exists(dump_file):
+        resp = json.load(open(dump_file))
+        dataset_id = resp["dataset_id"]
+        print("Returning from cache", dump_file)
+        return dataset_id
     time_start = datetime.now()
     print("Uploading the training data file ...")
     resp = ez.ez_load(token, train_dataset_name, options)
@@ -75,17 +82,16 @@ def eazyml_upload(token, train_dataset_name, outcome, id_col="null",
           "(dataset_id) is: %s" % (dataset_id))
     print("Likely next steps:")
     print("    python eazyml_upload_build_predict.py " +
-          "--dataset_id %s --augi --no_clean_resources "
-          "--prefix_name '%s' " % (dataset_id, prefix_name))
+          "--dataset_id %s --augi" % (dataset_id))
     print("    python eazyml_upload_build_predict.py " +
-          "--dataset_id %s --predictive --no_clean_resources "
-          "--prefix_name '%s' " % (dataset_id, prefix_name))
+          "--dataset_id %s --predictive" % (dataset_id))
     return dataset_id
 
 
 def eazyml_build_model(token, dataset_id, model_type,
                        nlp_options=None, date_time_column=None,
-                       prefix_name="", valid_file=None, validate=False):
+                       prefix_name="", valid_file=None,
+                       validate=False):
     """
     Build predictive or augmented intelligence models
 
@@ -105,8 +111,25 @@ def eazyml_build_model(token, dataset_id, model_type,
         options["date_time_column"] = date_time_column
         options["accelerate"] = "yes"
 
-    print("Building " + model_type + " models ...")
+    if model_type == "augmented intelligence":
+        dump_file = prefix_name + "_" + AUGI_MODEL_FILE
+        if os.path.exists(dump_file):
+            resp = json.load(open(dump_file))
+            if "model_id" in resp:
+                model_id = resp["model_id"]
+            else:
+                model_id = resp["validation_dataset_id"]
+            print("Returning from cache", dump_file)
+            return model_id, resp
+    else:
+        dump_file = prefix_name + "_" + PREDICTIVE_MODEL_FILE
+        if os.path.exists(dump_file):
+            resp = json.load(open(dump_file))
+            model_id = resp["model_id"]
+            print("Returning from cache", dump_file)
+            return model_id, resp
 
+    print("Building " + model_type + " models ...")
     # Model initialization
     time_start = datetime.now()
     resp = ez.ez_init_model(token, dataset_id, options)
@@ -118,96 +141,96 @@ def eazyml_build_model(token, dataset_id, model_type,
     print("Model initialization time: " +
           "%.2f secs" % (datetime.now() - time_start).total_seconds())
     model_id = resp["model_id"]
-    if date_time_column is not None:
+    if (date_time_column is not None or
+       "features_selected" in resp):
         json_obj = json.dumps(resp, indent=4)
-        dump_file = prefix_name + "_" + PREDICTIVE_MODEL_FILE
-        with open(dump_file, "w") as fw:
-            fw.write(json_obj)
-        print("Performance metrics are stored in %s" % (dump_file))
-        print("Model building time: " +
-              "%.2f secs" % (datetime.now() - time_start).total_seconds())
-        return model_id
-
-    # derive text features if any
-    time_start = datetime.now()
-    if nlp_options is None:
-        nlp_options = {
-               "text_types": {'*': ["sentiments"]},
-               "return_dataset": "no"
-               }
-    if type(nlp_options) == dict:
-        resp = ez.ez_derive_text(token, model_id, nlp_options)
-    if resp["success"] is True:
-        print(model_type.title() + " models: text features " +
-              "(sentiments) derived successfully")
-        print("Text features derivation time: " +
-              "%.2f secs" % (datetime.now() - time_start).total_seconds())
-    elif "Text columns are not present" not in resp["message"]:
-        print("Text features derivation error: %s" % (resp["message"]))
-
-    # Feature selection
-    time_start = datetime.now()
-    resp = ez.ez_select_features(token, model_id)
-    if resp["success"] is True:
-        print(model_type.title() + " models: features selected successfully")
-    else:
-        print("Model feature selection error: %s" % (resp["message"]))
-        return None
-
-    if model_type == "predictive":
-        json_obj = json.dumps(resp, indent=4)
-        dump_file = prefix_name + "_" + PREDICTIVE_MODEL_FEATURES_FILE
-        with open(dump_file, "w") as fw:
-            fw.write(json_obj)
-        print("Selected features are stored " +
-              "in %s" % (dump_file))
-    else:
-        json_obj = json.dumps(resp, indent=4)
-        dump_file = prefix_name + "_" + AUGI_MODEL_FEATURES_FILE
-        with open(dump_file, "w") as fw:
-            fw.write(json_obj)
-        print("Selected features are stored " +
-              "in %s" % (dump_file))
-
-    print("Feature selection time: " +
-          "%.2f secs" % (datetime.now() - time_start).total_seconds())
-
-    # Build model
-    time_start = datetime.now()
-    resp = ez.ez_build_models(token, model_id)
-    if resp["success"] is True:
-        print(model_type.title() + " models built successfully")
-    else:
-        print("Model building error: %s" % (resp["message"]))
-        return None
-    if model_type == "predictive":
-        json_obj = json.dumps(resp, indent=4)
-        dump_file = prefix_name + "_" + PREDICTIVE_MODEL_FILE
         with open(dump_file, "w") as fw:
             fw.write(json_obj)
         print("Performance metrics are stored in %s" % (dump_file))
         print("Model building time: " +
               "%.2f secs" % (datetime.now() - time_start).total_seconds())
     else:
-        if validate:
-            resp = ez.ez_validate(token, model_id, valid_file)
-        json_obj = json.dumps(resp, indent=4)
-        dump_file = prefix_name + "_" + AUGI_MODEL_FILE
-        with open(dump_file, "w") as fw:
-            fw.write(json_obj)
-        print("Augmented-Intelligence insights are stored %s" % (dump_file))
-        print("Model building time: " +
+        # derive text features if any
+        time_start = datetime.now()
+        if nlp_options is None:
+            nlp_options = {
+                   "text_types": {'*': ["sentiments"]},
+                   "return_dataset": "no"
+                   }
+        if type(nlp_options) == dict:
+            resp = ez.ez_derive_text(token, model_id, nlp_options)
+            if resp["success"] is True:
+                print(model_type.title() + " models: text features " +
+                      "(sentiments) derived successfully")
+                t_secs = (datetime.now() - time_start).total_seconds()
+                print("Text features derivation time: " +
+                      "%.2f secs" % (t_secs))
+            elif "Text columns are not present" not in resp["message"]:
+                print("Text features derivation error: %s" % (resp["message"]))
+
+        # Feature selection
+        time_start = datetime.now()
+        resp = ez.ez_select_features(token, model_id)
+        if resp["success"] is True:
+            print(model_type.title() + " models: features selected successfully")
+        else:
+            print("Model feature selection error: %s" % (resp["message"]))
+            return None
+
+        if model_type == "predictive":
+            json_obj = json.dumps(resp, indent=4)
+            dump_file = prefix_name + "_" + PREDICTIVE_MODEL_FEATURES_FILE
+            with open(dump_file, "w") as fw:
+                fw.write(json_obj)
+            print("Selected features are stored " +
+                  "in %s" % (dump_file))
+        else:
+            json_obj = json.dumps(resp, indent=4)
+            dump_file = prefix_name + "_" + AUGI_MODEL_FEATURES_FILE
+            with open(dump_file, "w") as fw:
+                fw.write(json_obj)
+            print("Selected features are stored " +
+                  "in %s" % (dump_file))
+
+        print("Feature selection time: " +
               "%.2f secs" % (datetime.now() - time_start).total_seconds())
-        return model_id, resp
+
+        # Build model
+        time_start = datetime.now()
+        resp = ez.ez_build_models(token, model_id)
+        if resp["success"] is True:
+            print(model_type.title() + " models built successfully")
+        else:
+            print("Model building error: %s" % (resp["message"]))
+            return None
+        if model_type == "predictive":
+            json_obj = json.dumps(resp, indent=4)
+            dump_file = prefix_name + "_" + PREDICTIVE_MODEL_FILE
+            with open(dump_file, "w") as fw:
+                fw.write(json_obj)
+            print("Performance metrics are stored in %s" % (dump_file))
+            print("Model building time: " +
+                  "%.2f secs" % (datetime.now() - time_start).total_seconds())
+        else:
+            if validate:
+                options = {}
+                if valid_file:
+                    options["filename"] = valid_file
+                resp = ez.ez_validate(token, model_id, options)
+            json_obj = json.dumps(resp, indent=4)
+            dump_file = prefix_name + "_" + AUGI_MODEL_FILE
+            with open(dump_file, "w") as fw:
+                fw.write(json_obj)
+            print("Augmented-Intelligence insights are stored %s" % (dump_file))
+            print("Model building time: " +
+                  "%.2f secs" % (datetime.now() - time_start).total_seconds())
     print("The reference identifier for the model " +
-          "(model_id) is: %s" % (resp["model_id"]))
+          "(model_id) is: %s" % (model_id))
     if model_type == "predictive":
         print("Likely next steps:")
-        print(("    python eazyml_upload_build_predict.py " +
-               "--model_id %s --predict_file <test_data_file> " +
-               "--no_clean_resources " +
-               "--prefix_name '%s'") % (model_id, prefix_name))
-    return model_id
+        print("    python eazyml_upload_build_predict.py " +
+              "--model_id %s --predict_file <test_data_file>" % (model_id))
+    return model_id, resp
 
 
 def eazyml_predict_dataset(token, model_id, predict_filename, prefix_name):
@@ -227,6 +250,11 @@ def eazyml_predict_dataset(token, model_id, predict_filename, prefix_name):
         return None
 
     dump_file = prefix_name + "_" + PREDICT_RESULTS_FILE
+    if os.path.exists(dump_file):
+        resp = json.load(open(dump_file))
+        prediction_dataset_id = resp["prediction_dataset_id"]
+        print("Returning from cache", dump_file)
+        return prediction_dataset_id, resp
 
     print("Uploading the prediction data file and making predictions ...")
     time_start = datetime.now()
@@ -249,10 +277,9 @@ def eazyml_predict_dataset(token, model_id, predict_filename, prefix_name):
     print("Likely next steps:")
     print(("    python eazyml_upload_build_predict.py " +
            "--model_id %s --prediction_dataset_id %s " +
-           "--explain_rec_nums <comma separated numbers> " +
-           "--no_clean_resources --prefix_name '%s'")
-          % (model_id, resp["prediction_dataset_id"], prefix_name))
-    return resp["prediction_dataset_id"]
+           "--explain_rec_nums <comma separated numbers>")
+          % (model_id, resp["prediction_dataset_id"]))
+    return resp["prediction_dataset_id"], resp
 
 
 def eazyml_explain_points(token, model_id, prediction_dataset_id,
@@ -268,6 +295,11 @@ def eazyml_explain_points(token, model_id, prediction_dataset_id,
 
     """
     dump_file = prefix_name + "_" + EXPLANATIONS_FILE
+
+    if os.path.exists(dump_file):
+        resp = json.load(open(dump_file))
+        print("Returning from cache", dump_file)
+        return resp
 
     options = {"record_number": record_numbers}
     print("Executing Explainable-AI ...")
@@ -289,7 +321,7 @@ def eazyml_explain_points(token, model_id, prediction_dataset_id,
     return resp
 
 
-def eazyml_auth(username, api_key, store_info=False):
+def eazyml_auth(username, api_key, password=None, store_info=False):
     """
     Authenticate and store auth info in a file for future use
 
@@ -301,12 +333,23 @@ def eazyml_auth(username, api_key, store_info=False):
     Return:
         Return authentication token used for sucessive calls to EazyML
     """
-    resp = ez.ez_auth(username, api_key=api_key)
+    if password is not None:
+        resp = ez.ez_auth(username, password=password)
+        content = {"username": username,
+                   "api_key": api_key,
+                   "password": password
+                  }
+
+    else:
+        resp = ez.ez_auth(username, api_key=api_key)
+        content = {"username": username,
+                   "api_key": api_key,
+                   "password": password
+                  }
+
     if resp["success"] is True:
         print("Authentication successful")
         if store_info:
-            content = {"username": username,
-                       "api_key": api_key}
             json_obj = json.dumps(content, indent=4)
             with open(AUTH_FILE, "w") as fw:
                 fw.write(json_obj)
@@ -316,28 +359,27 @@ def eazyml_auth(username, api_key, store_info=False):
         return None
     return resp["token"]
 
-
-def clean_everything(token, dataset_id_list=[],
-                     model_id_list=[],
-                     prediction_dataset_id_list=[]):
+def clean_resources(token, dataset_id_list=[],
+                    model_id_list=[],
+                    prediction_dataset_id_list=[]):
     """
         Delete the dataset, model and preditions made if any
     """
-    if prediction_dataset_id_list:
-        for idx in prediction_dataset_id_list:
-            if idx:
-                resp = ez.ez_delete_test_datasets(token, idx)
-                print(resp["message"])
     if model_id_list:
         for idx in model_id_list:
             if idx:
-                resp = ez.ez_delete_models(token, idx)
-                print(resp["message"])
+                ez.ez_delete_models(token, idx)
+                print("Deleted model with id: %s" %(idx))
+    if prediction_dataset_id_list:
+        for idx in prediction_dataset_id_list:
+            if idx:
+                ez.ez_delete_test_datasets(token, idx)
+                print("Deleted prediction dataset with id: %s" % (idx))
     if dataset_id_list:
         for idx in dataset_id_list:
             if idx:
-                resp = ez.ez_delete_datasets(token, idx)
-                print(resp["message"])
+                ez.ez_delete_datasets(token, idx)
+                print("Deleted train dataset with id: %s" % (idx))
 
 
 def flow(username, api_key, config_file=None, prefix_name="",
@@ -345,25 +387,27 @@ def flow(username, api_key, config_file=None, prefix_name="",
          discard_col_list=[], impute="no", outlier="no",
          dataset_id=None, model_type=None, model_id=None,
          predict_filename=None, prediction_dataset_id=None,
-         explain_record_numbers=[], clean_resources=True):
+         explain_record_numbers=[], clean_res=False):
     """
     Run the EazyML operations based on the input
 
     """
     # Get Authentication token
     token = None
+    check_complete_flow = 0
     if username and api_key:
         token = eazyml_auth(username, api_key, store_info=True)
     else:
         if os.path.exists(AUTH_FILE):
             auth_info = json.load(open(AUTH_FILE, "r"))
             token = eazyml_auth(auth_info["username"],
-                                auth_info["api_key"])
+                                auth_info["api_key"],
+                                auth_info["password"]
+                               )
         else:
             print("Please authenticate to proceed")
             return
 
-    cleanup_req = False
     # Set config file
     if config_file:
         print("Uploading the configuration file ...")
@@ -382,9 +426,9 @@ def flow(username, api_key, config_file=None, prefix_name="",
         dataset_id = eazyml_upload(token, train_dataset_name,
                                    outcome, id_col, discard_col_list,
                                    impute, outlier, prefix_name)
-        cleanup_req = True
         if not dataset_id:
             return
+        check_complete_flow += 1
 
     # Build model
     if model_type and dataset_id:
@@ -393,49 +437,55 @@ def flow(username, api_key, config_file=None, prefix_name="",
                                       valid_file=train_dataset_name)
         if not model_id:
             return
-        cleanup_req = True
+        model_id = model_id[0]
+        check_complete_flow += 1
+        if model_type == "augmented intelligence" and \
+           check_complete_flow == 2:
+            check_complete_flow = 4
 
     # Predict
     if predict_filename and model_id:
         prediction_dataset_id = eazyml_predict_dataset(token, model_id,
                                                        predict_filename,
                                                        prefix_name)
-        cleanup_req = True
         if not prediction_dataset_id:
             return
-
+        prediction_dataset_id = prediction_dataset_id[0]
+        check_complete_flow += 1
     # Explain points
     if explain_record_numbers and model_id and prediction_dataset_id:
         eazyml_explain_points(token, model_id, prediction_dataset_id,
                               explain_record_numbers, prefix_name)
-
-    if clean_resources and cleanup_req:
-        clean_everything(token, [dataset_id],
-                         [model_id],
-                         [prediction_dataset_id])
+        check_complete_flow += 1
+    
+    # If complete flow executed, delete the resources
+    if clean_res or check_complete_flow == 4:
+        clean_resources(token, [dataset_id], [model_id], [prediction_dataset_id])
         print("Resources cleanup done!")
 
 
 if __name__ == "__main__":
     args_list = sys.argv[1:]
     # Options
-    options = "hu:p:g:x:" + \
-              "f:o:i:c:ul" + \
+    options = "hu:p:g:" + \
+              "x:f:o:" + \
+              "i:c:ul" + \
               "d:m:va" + \
-              "r:t:e:s"
+              "r:t:" + \
+              "e:s"
     long_options = ["help", "username=", "api_key=", "config_file=",
                     "prefix_name=", "train_file=", "outcome=",
-                    "id_col=", "discard_col_list=", "impute", "outlier",
+                    "id_col=", "discard_col_list=", "impute", "outliers",
                     "dataset_id=", "model_id=", "predictive", "augi",
                     "predict_file=", "prediction_dataset_id=",
-                    "explain_rec_nums=", "no_clean_resources"]
+                    "explain_rec_nums=", "clean_resources"]
     username = api_key = config_file = None
-    impute = outlier = "no"
+    outlier = impute = "no"
     train_file = outcome = id_col = discard_col_list = dataset_id = None
     model_id = model_type = None
     predict_filename = prediction_dataset_id = None
+    clean_res = False
     explain_record_numbers = None
-    clean_resources = True
     prefix_name = "EazyML"
     try:
         # Parsing argument
@@ -464,10 +514,8 @@ if __name__ == "__main__":
                 discard_col_list = [x.strip() for x in curr_val.split(",")]
             elif curr_arg in ("-u", "--impute"):
                 impute = "yes"
-            elif curr_arg in ("-l", "--outlier"):
+            elif curr_arg in ("-l", "--outliers"):
                 outlier = "yes"
-            elif curr_arg in ("-s", "--no_clean_resources"):
-                clean_resources = False
             elif curr_arg in ("-d", "--dataset_id"):
                 dataset_id = curr_val
             elif curr_arg in ("-m", "--model_id"):
@@ -483,13 +531,15 @@ if __name__ == "__main__":
             elif curr_arg in ("-e", "--explain_rec_nums"):
                 explain_record_numbers = [x.strip()
                                           for x in curr_val.split(",")]
-
+            elif curr_arg in ("-s", "--clean_resources"):
+                clean_res = True
+        os.system("rm -f " + prefix_name + "*.json")
         flow(username, api_key, config_file, prefix_name,
              train_file, outcome, id_col,
              discard_col_list, impute, outlier,
              dataset_id, model_type, model_id,
              predict_filename, prediction_dataset_id,
-             explain_record_numbers, clean_resources)
+             explain_record_numbers, clean_res)
     except getopt.error as err:
         # output error, and return with an error code
-        print(str(err))
+        print (str(err))
